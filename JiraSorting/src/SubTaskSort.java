@@ -306,11 +306,9 @@ public class SubTaskSort {
 //			jiraURL = new URL(jiraURLString);
 //			FileUtils.copyURLToFile(jiraURL, new File(jiraIn));
 //		} catch (MalformedURLException e1) {
-//			// TODO Auto-generated catch block
 //			e1.printStackTrace();
 //			return;
 //		} catch (IOException e) {
-//			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //			return;
 //		}
