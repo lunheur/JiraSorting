@@ -1,35 +1,16 @@
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.hssf.util.HSSFColor;
-import org.apache.poi.hssf.util.HSSFColor.GREY_25_PERCENT;
-import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.hssf.usermodel.*;
+//import org.apache.poi.hssf.usermodel.HSSFRow;
+//import org.apache.poi.hssf.usermodel.HSSFSheet;
+//import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+//import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 
 public class SubTaskSort {
 	File excelInput;
@@ -38,7 +19,8 @@ public class SubTaskSort {
 	Map<String,String> knownSubTasks;
 	List<String> columns;
 	int keyCol, subTasksCol;
-	CellStyle header;
+	int issuesDisplayed;
+	HSSFCellStyle headerIn, headerOut, bodyIn, bodyOut;
 	
 	public SubTaskSort(String excelIn, String excelOut){
 		excelInput = new File(excelIn);
@@ -59,7 +41,13 @@ public class SubTaskSort {
 
 	private void toExcel() throws IOException {
 		HSSFWorkbook workbook = new HSSFWorkbook();
-		HSSFSheet sheet = workbook.createSheet();
+		
+		headerOut = workbook.createCellStyle();
+		headerOut.cloneStyleFrom(headerIn);
+		bodyOut = workbook.createCellStyle();
+		bodyOut.cloneStyleFrom(bodyIn);
+		
+		HSSFSheet sheet = workbook.createSheet();		
 		int writeRow = 0;
 		writeRow = toExcel(sheet, columns, writeRow);
 		
@@ -84,22 +72,22 @@ public class SubTaskSort {
 		HSSFRow rowhead = sheet.createRow(writeRow);
 		for(int col = 0; col < data.size(); col++){
 			if(col < keyCol){
-				createCell(rowhead, col, header, data.get(col));
+				createCell(rowhead, col, headerOut, data.get(col));
 				sheet.autoSizeColumn(col);
 			} else if(col == keyCol){
-				createCell(rowhead, col, header, "Parent");
+				createCell(rowhead, col, headerOut, "Parent");
 				sheet.autoSizeColumn(col);
-				createCell(rowhead, col + 1, header, data.get(col));
+				createCell(rowhead, col + 1, headerOut, data.get(col));
 				sheet.autoSizeColumn(col + 1);
 			}else{
-				createCell(rowhead, col + 1, header, data.get(col));
+				createCell(rowhead, col + 1, headerOut, data.get(col));
 				sheet.autoSizeColumn(col + 1);
 			}
 		}
 		return ++writeRow;
 	}
 	
-	private void createCell(HSSFRow rowhead, int col, CellStyle style, String value) {
+	private void createCell(HSSFRow rowhead, int col, HSSFCellStyle style, String value) {
 		HSSFCell cell = rowhead.createCell(col);
 		cell.setCellStyle(style);
 		cell.setCellValue(value);
@@ -109,12 +97,12 @@ public class SubTaskSort {
 		HSSFRow rowhead = sheet.createRow(writeRow);
 		for(int col = 0; col < issue.fields.size(); col++){
 			if(col < keyCol){
-				rowhead.createCell(col).setCellValue(issue.fields.get(col));
+				createCell(rowhead, col, bodyOut, issue.fields.get(col));
 			} else if(col == keyCol){
-				rowhead.createCell(col).setCellValue(issue.key);
-				rowhead.createCell(col + 1).setCellValue(issue.fields.get(col));
+				createCell(rowhead, col, bodyOut, issue.key);
+				createCell(rowhead, col + 1, bodyOut, issue.fields.get(col));
 			}else{
-				rowhead.createCell(col + 1).setCellValue(issue.fields.get(col));
+				createCell(rowhead, col + 1, bodyOut, issue.fields.get(col));
 			}
 		}
 		return ++writeRow;
@@ -124,12 +112,12 @@ public class SubTaskSort {
 		HSSFRow rowhead = sheet.createRow(writeRow);
 		for(int col = 0; col < subTask.fields.size(); col++){
 			if(col < keyCol){
-				rowhead.createCell(col).setCellValue(subTask.fields.get(col));
+				createCell(rowhead, col, bodyOut, subTask.fields.get(col));
 			} else if(col == keyCol){
-				rowhead.createCell(col).setCellValue(subTask.parentKey);
-				rowhead.createCell(col + 1).setCellValue(subTask.fields.get(col));
+				createCell(rowhead, col, bodyOut, subTask.parentKey);
+				createCell(rowhead, col + 1, bodyOut, subTask.fields.get(col));
 			}else{
-				rowhead.createCell(col + 1).setCellValue(subTask.fields.get(col));
+				createCell(rowhead, col + 1, bodyOut, subTask.fields.get(col));
 			}
 		}
 		return ++writeRow;
@@ -139,6 +127,7 @@ public class SubTaskSort {
 	 * @param sheet Sheet to search
 	 */
 	private void saveIssues(HSSFSheet sheet) {
+		boolean oneTime = true;
 		issues = new ArrayList<Issue>();
 		knownSubTasks = new TreeMap<String,String>();
 		
@@ -148,7 +137,7 @@ public class SubTaskSort {
 				.getStringCellValue()
 				.substring(11);
 		issuesString = issuesString.substring(0, issuesString.indexOf(' '));
-		int issuesDisplayed = Integer.valueOf(issuesString);
+		issuesDisplayed = Integer.valueOf(issuesString);
 		
 		int index = 4; //row to start at
 		int count = 0; //issues found
@@ -164,8 +153,13 @@ public class SubTaskSort {
 				if (cell == null
 						|| cell.getCellType() == HSSFCell.CELL_TYPE_BLANK)
 					cellValue = "";
-				else
+				else{
 					cellValue = getCellString(cell).trim();
+					if(oneTime && col == 3){
+						bodyIn = cell.getCellStyle();
+						oneTime = false;
+					}
+				}
 
 				fields.add(cellValue);
 				if (col == keyCol){
@@ -261,16 +255,15 @@ public class SubTaskSort {
 		int index = 0;
 		while(true){
 			HSSFCell cell = colRow.getCell(index);
-			header = cell.getCellStyle();
 			
 			if (cell == null || 
 				cell.getCellType() == HSSFCell.CELL_TYPE_BLANK ||
 				cell.getStringCellValue().equals("")
-			   ) 
+			   )
 				break;
 			String cellValue = cell.getStringCellValue();
 			
-			if(cellValue.equals("Key")) keyCol = index;
+			if(cellValue.equals("Key")) {keyCol = index; headerIn = cell.getCellStyle();}
 			if(cellValue.equals("Sub-Tasks")) subTasksCol = index;
 			columns.add(cellValue);
 			index++;
@@ -278,8 +271,8 @@ public class SubTaskSort {
 	}
 
 	public static void main(String[] args) {
-		String jiraIn = "C:/Users/Victor/Documents/JIRA.xls";
-		String jiraOut = "C:/Users/Victor/Documents/JIRA-SubSorted.xls";
+		String jiraIn = System.getProperty("user.home").replace('\\', '/') + "/Documents/JIRA.xls";
+		String jiraOut = System.getProperty("user.home").replace('\\', '/') + "/Documents/JIRA-SubSorted.xls";
 		
 //		download(jiraIn, jiraOut);
 		
