@@ -13,6 +13,30 @@ import org.apache.poi.hssf.usermodel.*;
 //import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 
 public class SubTaskSort {
+	
+	/**Where to find the file
+	 * C:/Users/youruser/DIR_IN
+	 */
+	final static String DIR_IN = "Documents";
+	
+	/**Where to output the file
+	 * C:/Users/youruser/DIR_OUT
+	 */
+	final static String DIR_OUT = "Documents";
+	
+	/**Name of file to find
+	 * Needs to be .xls
+	 */
+	final static String REPORT_IN = "JIRA";
+	 
+	/**Name of file to find
+	 * Will be .xls
+	 * 
+	 * NOTE:
+	 * if DIR_OUT is the same as DIR_IN and REPORT_OUT is the same as REPORT_IN, it will be overwritten
+	 */
+	final static String REPORT_OUT = "JIRA-sorted";
+	
 	File excelInput;
 	File excelOutput;
 	List<Issue> issues;
@@ -271,46 +295,20 @@ public class SubTaskSort {
 	}
 
 	public static void main(String[] args) {
-		String jiraIn = System.getProperty("user.home").replace('\\', '/') + "/Documents/JIRA.xls";
-		String jiraOut = System.getProperty("user.home").replace('\\', '/') + "/Documents/JIRA-SubSorted.xls";
-		
-//		download(jiraIn, jiraOut);
-		
+		String jiraIn = System.getProperty("user.home").replace('\\', '/') + "/";
+		jiraIn += DIR_IN + "/";
+		jiraIn += REPORT_IN + ".xls";
+		String jiraOut = System.getProperty("user.home").replace('\\', '/') + "/";
+		jiraOut += DIR_OUT + "/";
+		jiraOut += REPORT_OUT + ".xls";
+				
 		SubTaskSort sorter = new SubTaskSort(jiraIn, jiraOut);
 		try {
 			sorter.sort();
+			System.out.println("Done!");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-//	private static void download(String jiraIn, String jiraOut) throws ClientProtocolException, IOException {
-//		HttpClient client = new DefaultHttpClient();
-//		HttpPost post = new HttpPost("https://acciodata.atlassian.net/login?");
-//		HttpResponse response = null;
-//		List<NameValuePair> postFields = new ArrayList<NameValuePair>(2);  
-//
-//		// Set the post fields
-//		postFields.add(new BasicNameValuePair("username", "admin"));
-//		postFields.add(new BasicNameValuePair("password", "Ad07pm1!!"));
-//		post.setEntity(new UrlEncodedFormEntity(postFields, HTTP.UTF_8));
-//
-//		// Execute the POST request
-//		response = client.execute(post);
-//		post = new HttpPost("https://acciodata.atlassian.net/sr/jira.issueviews:searchrequest-excel-all-fields/temp/SearchRequest.xls?jqlQuery=ORDER+BY+key+ASC");
-//		 
-//		
-//		String jiraURLString = "https://acciodata.atlassian.net/sr/jira.issueviews:searchrequest-excel-all-fields/temp/SearchRequest.xls?jqlQuery=ORDER+BY+key+ASC";
-//		URL jiraURL;
-//		try {
-//			jiraURL = new URL(jiraURLString);
-//			FileUtils.copyURLToFile(jiraURL, new File(jiraIn));
-//		} catch (MalformedURLException e1) {
-//			e1.printStackTrace();
-//			return;
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//			return;
-//		}
-//	}
 }
