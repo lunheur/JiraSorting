@@ -124,7 +124,7 @@ public class SubTaskSort {
 				createCell(rowhead, col, bodyOut, issue.fields.get(col));
 			} else if(col == keyCol){
 				createCell(rowhead, col, bodyOut, issue.key);
-				createCell(rowhead, col + 1, bodyOut, issue.fields.get(col));
+				createCell(rowhead, col + 1, bodyOut, "");
 			}else{
 				createCell(rowhead, col + 1, bodyOut, issue.fields.get(col));
 			}
